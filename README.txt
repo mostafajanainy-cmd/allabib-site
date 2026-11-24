@@ -32,8 +32,7 @@ SETUP (about 20 minutes, free)
      match /databases/{database}/documents {
        function isAdmin() {
          return request.auth != null
-           && request.auth.token.email == 'mostafajanainy@gmail.com
-'
+           && request.auth.token.email == 'YOUR_EMAIL@gmail.com'
            && request.auth.token.email_verified == true;
        }
        match /codes/{code} {
