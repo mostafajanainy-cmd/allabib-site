@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Al-Labib Admin</title>
+<style>
+:root{--bg:#0F1838;--card:#22346E;--line:#3C509A;--gold:#D9B25C;--ink:#F8F0DC;--muted:#B9C2E6;--good:#4CC38A;--bad:#FF8A8A;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:20px}
+main{max-width:760px;margin:0 auto;display:grid;gap:16px}h1{color:var(--gold);margin:0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+button,input{font:inherit}button{background:var(--gold);color:#0F1838;border:0;border-radius:10px;padding:.55rem 1rem;font-weight:700;cursor:pointer}
+button.g{background:transparent;color:var(--ink);border:2px solid var(--line)}
+input{background:#0F1838;color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:.45rem .6rem;width:7rem}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}td,th{padding:.35rem .5rem;border-bottom:1px solid var(--line);text-align:left}
+.wrap{max-height:420px;overflow:auto}.u{color:var(--bad)}.f{color:var(--good)}code{letter-spacing:.06em}
+textarea{width:100%;min-height:8rem;background:#0F1838;color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:.5rem}
+</style></head><body><main>
+<h1>Al-Labib: book codes</h1>
+<div class="box" id="login"><p>Sign in with the Google account you set as admin.</p><button id="sign" type="button">Sign in with Google</button><p id="err" class="u"></p></div>
+<div id="panel" hidden>
+ <div class="box"><div class="row"><strong id="stats"></strong><span style="flex:1"></span><button class="g" id="reload" type="button">Refresh</button></div></div>
+ <div class="box"><h3 style="margin-top:0">Make new codes</h3><div class="row"><label for="n">How many</label><input id="n" type="number" min="1" max="2000" value="50"><button id="gen" type="button">Generate</button></div>
+  <p style="color:var(--muted)">New codes appear below. Copy them into your print file.</p><textarea id="out" readonly placeholder="New codes will appear here"></textarea>
+  <div class="row"><button class="g" id="copy" type="button">Copy list</button></div></div>
+ <div class="box"><h3 style="margin-top:0">All codes</h3><div class="wrap"><table><thead><tr><th>Code</th><th>Status</th><th>Used on</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></div>
+</div></main>
+<script src="config.js"></script>
+<script>
+(function(){var $=function(i){return document.getElementById(i)};
+var C=window.ALLABIB_FIREBASE;if(!C){$("err").textContent="Fill in config.js first (see README).";return;}
+var B="https://www.gstatic.com/firebasejs/10.12.2/",db;
+function L(u,cb){var s=document.createElement("script");s.src=u;s.onload=cb;document.head.appendChild(s);}
+L(B+"firebase-app-compat.js",function(){L(B+"firebase-auth-compat.js",function(){L(B+"firebase-firestore-compat.js",function(){
+ firebase.initializeApp(C);db=firebase.firestore();
+ $("sign").onclick=function(){firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(e){$("err").textContent=e.message;});};
+ firebase.auth().onAuthStateChanged(function(u){if(u&&!u.isAnonymous){$("login").hidden=true;$("panel").hidden=false;load();}});
+});});});
+var A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function mk(){var a=new Uint32Array(12);crypto.getRandomValues(a);var s="";for(var i=0;i<12;i++)s+=A[a[i]%A.length];return s;}
+function fmt(s){return s.slice(0,4)+"-"+s.slice(4,8)+"-"+s.slice(8);}
+function load(){db.collection("codes").get().then(function(q){
+ var rows=$("rows");rows.innerHTML="";var used=0,all=[];q.forEach(function(d){all.push(d);});
+ all.sort(function(a,b){return (b.data().created||"").localeCompare(a.data().created||"");});
+ all.forEach(function(d){var x=d.data(),tr=document.createElement("tr");if(x.claimedBy)used++;
+  tr.innerHTML="<td><code>"+fmt(d.id)+"</code></td><td class='"+(x.claimedBy?"u":"f")+"'>"+(x.claimedBy?"Used":"Free")+"</td><td>"+(x.claimedAt?x.claimedAt.slice(0,10):"")+"</td><td></td>";
+  if(x.claimedBy){var b=document.createElement("button");b.className="g";b.textContent="Release";b.onclick=function(){db.collection("codes").doc(d.id).update({claimedBy:null,claimedAt:null}).then(load);};tr.lastChild.appendChild(b);}
+  rows.appendChild(tr);});
+ $("stats").textContent=all.length+" codes, "+used+" used, "+(all.length-used)+" free";});}
+$("reload").onclick=load;
+$("gen").onclick=function(){var n=Math.min(2000,Math.max(1,parseInt($("n").value)||0)),list=[],now=new Date().toISOString();
+ var chunks=[];for(var i=0;i<n;i+=400)chunks.push(Math.min(400,n-i));
+ var p=Promise.resolve();chunks.forEach(function(c){p=p.then(function(){var b=db.batch();for(var i=0;i<c;i++){var id=mk();list.push(fmt(id));b.set(db.collection("codes").doc(id),{claimedBy:null,claimedAt:null,created:now});}return b.commit();});});
+ p.then(function(){$("out").value=list.join("\n");load();}).catch(function(e){$("err").textContent=e.message;});};
+$("copy").onclick=function(){var o=$("out");o.select();try{navigator.clipboard.writeText(o.value);}catch(e){document.execCommand("copy");}};
+})();
+</script></body></html>
