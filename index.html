@@ -331,7 +331,7 @@ function lesson(app,l,tab){
   var cr=el("div","crumb");var c=D.chapters.filter(function(c){return c.n===l.c;})[0];
   var back=el("a","eyebrow","← Chapter "+c.n+" · "+c.title);back.href="#";cr.appendChild(back);
   var tt=el("div","ttl");tt.appendChild(illus(l.icon,84));tt.appendChild(el("h1","","Lesson "+l.n+": "+title(l)));cr.appendChild(tt);app.appendChild(cr);
-  (function(){var im=new Image();im.onload=function(){im.className="banner";im.alt="";cr.appendChild(im);};im.src="img/"+l.id+".jpg";})();
+  (function(){var im=new Image();im.onload=function(){im.className="banner";im.alt="";cr.appendChild(im);};im.src=l.id+".jpg";})();
   var tabs=[];
   if((x&&x.learn)||l.facts)tabs.push(["learn","Learn"]);
   tabs.push(["g","Drag the words"],["q","Quick quiz"],["tf","True or false"],["m","Match it"],["mm","Memory game"],["s","Sort it"],["w","Word search"]);
