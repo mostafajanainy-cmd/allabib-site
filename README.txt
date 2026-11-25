@@ -77,6 +77,7 @@ TIPS
 - Never share the rules with another email.
 
 LIMITS TO KNOW
+v2
 - If a buyer clears the browser's data or uses private browsing, the device
   is forgotten. Press Release for them in admin.html.
 - Lesson answers are inside the page code. The code protects who can open
